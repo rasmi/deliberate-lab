@@ -1,0 +1,166 @@
+@use '../../sass/common';
+@use '../../sass/typescale';
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.editor-container {
+  @include common.flex-column;
+  gap: common.$spacing-xl;
+  padding: common.$spacing-large 0;
+}
+
+.editor-section {
+  @include common.flex-column;
+  gap: common.$spacing-large;
+  padding: common.$spacing-large;
+  background-color: var(--md-sys-color-surface-variant);
+  border-radius: common.$spacing-medium;
+  width: 100%;
+}
+
+
+.header-with-button {
+  @include common.flex-row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.empty-list {
+  padding: common.$spacing-xl;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+  font-style: italic;
+}
+
+.card-list {
+  @include common.flex-column;
+  gap: common.$spacing-medium;
+  width: 100%;
+}
+
+.card-item {
+  @include common.flex-column;
+  gap: common.$spacing-medium;
+  padding: common.$spacing-large;
+  background-color: var(--md-sys-color-surface);
+  border-radius: common.$spacing-medium;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  overflow: hidden;
+  margin-bottom: common.$spacing-medium;
+  
+  &:hover {
+    background-color: var(--md-sys-color-surface-container-high);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  &.selected {
+    border-color: var(--md-sys-color-primary);
+    background-color: var(--md-sys-color-primary-container);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &.expanded {
+    padding-bottom: common.$spacing-xl;
+    border-color: var(--md-sys-color-primary);
+    cursor: default;
+  }
+}
+
+.card-item-header {
+  @include common.flex-row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.card-item-content {
+  @include common.flex-column;
+  gap: common.$spacing-small;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.card-item-title {
+  @include typescale.title-medium;
+  color: var(--md-sys-color-on-surface);
+  font-weight: 500;
+}
+
+.card-item-preview {
+  @include typescale.body-small;
+  color: var(--md-sys-color-on-surface-variant);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.card-item-actions {
+  @include common.flex-row;
+  gap: common.$spacing-small;
+}
+
+.inline-editor {
+  @include common.flex-column;
+  gap: common.$spacing-medium;
+  width: 100%;
+  padding-top: common.$spacing-medium;
+  animation: fadeIn 0.3s ease;
+}
+
+.inline-editor-row {
+  @include common.flex-row;
+  gap: common.$spacing-large;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.inline-editor-actions {
+  @include common.flex-row;
+  justify-content: flex-end;
+  gap: common.$spacing-medium;
+  margin-top: common.$spacing-medium;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-field {
+  @include common.flex-column;
+  gap: common.$spacing-small;
+  width: 100%;
+  
+  label {
+    @include typescale.body-medium;
+    font-weight: 500;
+  }
+  
+  input, textarea {
+    padding: common.$spacing-medium;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: common.$spacing-small;
+    width: 100%;
+    
+    &:focus {
+      outline: 2px solid var(--md-sys-color-primary);
+      border-color: var(--md-sys-color-primary);
+    }
+  }
+}
+
+.editor-actions {
+  @include common.flex-row;
+  justify-content: flex-end;
+  gap: common.$spacing-medium;
+  margin-top: common.$spacing-large;
+}

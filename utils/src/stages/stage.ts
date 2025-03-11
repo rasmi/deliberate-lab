@@ -15,6 +15,12 @@ import {
   ComprehensionStageParticipantAnswer,
 } from './comprehension_stage';
 import {
+  FlipCardStageConfig,
+  FlipCardStageParticipantAnswer,
+  FlipCardStagePublicData,
+  createFlipCardStagePublicData,
+} from './flipcard_stage';
+import {
   RankingStageConfig,
   RankingStageParticipantAnswer,
   RankingStagePublicData,
@@ -62,6 +68,7 @@ export enum StageKind {
   SURVEY = 'survey',
   SURVEY_PER_PARTICIPANT = 'surveyPerParticipant',
   TRANSFER = 'transfer',
+  FLIPCARD = 'flipcard', // flipcard selection stage
 }
 
 /** Specific game associated with stage. */
@@ -104,6 +111,7 @@ export type StageConfig =
   | ChatStageConfig
   | ChipStageConfig
   | ComprehensionStageConfig
+  | FlipCardStageConfig
   | RankingStageConfig
   | InfoStageConfig
   | PayoutStageConfig
@@ -131,6 +139,7 @@ export type StageParticipantAnswer =
   | ChatStageParticipantAnswer
   | ChipStageParticipantAnswer
   | ComprehensionStageParticipantAnswer
+  | FlipCardStageParticipantAnswer
   | PayoutStageParticipantAnswer
   | RankingStageParticipantAnswer
   | SurveyStageParticipantAnswer
@@ -152,6 +161,7 @@ export interface BaseStagePublicData {
 export type StagePublicData =
   | ChatStagePublicData
   | ChipStagePublicData
+  | FlipCardStagePublicData
   | RankingStagePublicData
   | SalespersonStagePublicData
   | SurveyStagePublicData;
@@ -197,6 +207,9 @@ export function createPublicDataFromStageConfigs(stages: StageConfig[]) {
         break;
       case StageKind.CHIP:
         publicData.push(createChipStagePublicData(stage.id));
+        break;
+      case StageKind.FLIPCARD:
+        publicData.push(createFlipCardStagePublicData(stage.id));
         break;
       case StageKind.RANKING:
         publicData.push(createRankingStagePublicData(stage.id));

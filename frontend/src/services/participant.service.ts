@@ -2,6 +2,7 @@ import {
   ChatStageParticipantAnswer,
   ChipOffer,
   CreateChatMessageData,
+  FlipCardEvent,
   RankingItem,
   ParticipantChatMessage,
   ParticipantProfileBase,
@@ -44,6 +45,7 @@ import {
   sendChipOfferCallable,
   sendChipResponseCallable,
   setChipTurnCallable,
+  setFlipCardInteractionCallable,
   setSalespersonControllerCallable,
   setSalespersonMoveCallable,
   setSalespersonResponseCallable,
@@ -771,5 +773,24 @@ export class ParticipantService extends Service {
       );
     }
     return response;
+  }
+
+  /** Record a FlipCard interaction (flip, select, confirm) */
+  async setFlipCardInteraction(stageId: string, eventType: FlipCardEvent, cardId: string) {
+    let response = {success: false};
+    if (this.experimentId && this.profile) {
+      response = await setFlipCardInteractionCallable(
+        this.sp.firebaseService.functions,
+        {
+          experimentId: this.experimentId,
+          cohortId: this.profile.currentCohortId,
+          stageId,
+          participantId: this.profile.privateId,
+          eventType,
+          cardId,
+        },
+      );
+    }
+    return response.success;
   }
 }

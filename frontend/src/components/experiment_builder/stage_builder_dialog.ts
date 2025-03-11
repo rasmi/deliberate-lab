@@ -18,6 +18,7 @@ import {
   StageConfig,
   StageKind,
   createChatStage,
+  createFlipCardStage,
   createRankingStage,
   createInfoStage,
   createPayoutStage,
@@ -46,6 +47,10 @@ import {
   SALESPERSON_GAME_METADATA,
   getSalespersonStageConfigs,
 } from '../../shared/games/salesperson';
+import {
+  FLIPCARD_GAME_METADATA,
+  getFlipCardStageConfigs,
+} from '../../shared/games/flipcard';
 
 import {styles} from './stage_builder_dialog.scss';
 
@@ -124,7 +129,7 @@ export class StageBuilderDialog extends MobxLitElement {
       <div class="card-gallery-wrapper">
         ${this.renderLASCard()} ${this.renderLASCard(true)}
         ${this.renderRealityTVCard()} ${this.renderChipNegotiationCard()}
-        ${this.renderSalespersonGameCard()}
+        ${this.renderSalespersonGameCard()} ${this.renderFlipCardGameCard()}
       </div>
     `;
   }
@@ -137,6 +142,7 @@ export class StageBuilderDialog extends MobxLitElement {
         ${this.renderSurveyCard()} ${this.renderSurveyPerParticipantCard()}
         ${this.renderChatCard()} ${this.renderRankingCard()}
         ${this.renderRevealCard()} ${this.renderPayoutCard()}
+        ${this.renderFlipCardCard()}
       </div>
     `;
   }
@@ -219,6 +225,19 @@ export class StageBuilderDialog extends MobxLitElement {
       <div class="card" @click=${addGame}>
         <div class="title">${SALESPERSON_GAME_METADATA.name}</div>
         <div>${SALESPERSON_GAME_METADATA.description}</div>
+      </div>
+    `;
+  }
+
+  private renderFlipCardGameCard() {
+    const addGame = () => {
+      this.addGame(FLIPCARD_GAME_METADATA, getFlipCardStageConfigs());
+    };
+
+    return html`
+      <div class="card" @click=${addGame}>
+        <div class="title">🃏 ${FLIPCARD_GAME_METADATA.name}</div>
+        <div>${FLIPCARD_GAME_METADATA.description}</div>
       </div>
     `;
   }
@@ -369,6 +388,21 @@ export class StageBuilderDialog extends MobxLitElement {
         <div>
           Assign participants to different cohorts while they wait in this
           stage.
+        </div>
+      </div>
+    `;
+  }
+
+  private renderFlipCardCard() {
+    const addStage = () => {
+      this.addStage(createFlipCardStage([]));
+    };
+
+    return html`
+      <div class="card" @click=${addStage}>
+        <div class="title">🃏 FlipCard</div>
+        <div>
+          Present users with cards that can be flipped to reveal more information before making a selection.
         </div>
       </div>
     `;

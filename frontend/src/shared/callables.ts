@@ -20,6 +20,7 @@ import {
   SendChipResponseData,
   SendParticipantCheckData,
   SetChipTurnData,
+  SetFlipCardInteractionData,
   SetSalespersonControllerData,
   SetSalespersonMoveData,
   SetSalespersonResponseData,
@@ -496,6 +497,21 @@ export const ackAlertMessageCallable = async (
   >(
     functions,
     'ackAlertMessage',
+  )(config);
+  return data;
+};
+
+/** Generic endpoint for recording flipcard interactions. */
+export const setFlipCardInteractionCallable = async (
+  functions: Functions,
+  config: SetFlipCardInteractionData,
+) => {
+  const {data} = await httpsCallable<
+    SetFlipCardInteractionData,
+    SuccessResponse
+  >(
+    functions,
+    'setFlipCardInteraction',
   )(config);
   return data;
 };

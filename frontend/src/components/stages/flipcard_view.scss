@@ -1,0 +1,120 @@
+@use '../../sass/common';
+@use '../../sass/typescale';
+@use '../../sass/colors';
+
+:host {
+  @include common.flex-column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.flipcard-container {
+  @include common.flex-column;
+  gap: common.$spacing-xl;
+  padding: common.$main-content-padding;
+  height: 100%;
+  position: relative;
+  padding-bottom: 80px; /* Add bottom padding to prevent cards from being hidden */
+  overflow-y: auto;
+}
+
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: common.$spacing-xxl;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 60px; /* Add space at the bottom to ensure cards aren't hidden */
+}
+
+.card {
+  @include common.flex-column;
+  align-items: center;
+  background-color: var(--md-sys-color-surface);
+  border-radius: common.$spacing-xl;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  height: 400px;
+  padding: common.$spacing-xl;
+  position: relative;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  width: 300px;
+  margin: 0 auto;
+
+  &.flipped {
+    transform: rotateY(180deg);
+  }
+
+  &.selected {
+    border: 3px solid var(--md-sys-color-primary);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.card-front, .card-back {
+  @include common.flex-column;
+  backface-visibility: hidden;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: common.$spacing-xl;
+  gap: common.$spacing-large;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.card-title {
+  @include typescale.title-large;
+  color: var(--md-sys-color-on-surface);
+  text-align: center;
+  margin-bottom: common.$spacing-small;
+}
+
+.card-content {
+  @include typescale.body-medium;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-grow: 1;
+  overflow: auto;
+  text-align: center;
+}
+
+.card-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: common.$spacing-medium;
+  margin-bottom: common.$spacing-medium;
+}
+
+.card-actions {
+  @include common.flex-row;
+  justify-content: space-between;
+  width: 100%;
+  gap: common.$spacing-medium;
+  margin-top: auto;
+}
+
+.confirm-container {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  z-index: 10;
+  background-color: var(--md-sys-color-surface);
+  padding: 8px;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selection-text {
+  @include typescale.title-medium;
+  color: var(--md-sys-color-primary);
+  text-align: center;
+  margin-bottom: common.$spacing-large;
+  margin-right: 150px; /* Make space for the confirm button */
+}

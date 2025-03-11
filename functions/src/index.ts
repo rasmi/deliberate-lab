@@ -31,6 +31,8 @@ export * from './stages/salesperson.endpoints';
 
 export * from './stages/survey.endpoints';
 
+export * from './stages/flipcard.endpoints';
+
 // API functions
 export * from './api/gemini.api';
 export * from './api/openai.api';
