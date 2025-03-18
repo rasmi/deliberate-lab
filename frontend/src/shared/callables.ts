@@ -499,3 +499,44 @@ export const ackAlertMessageCallable = async (
   )(config);
   return data;
 };
+
+// Stock Picker allocation interface
+interface SetStockAllocationData {
+  experimentId: string;
+  cohortId: string;
+  stageId: string;
+  participantId: string;
+  allocations: Record<string, number>;
+}
+
+// Stock Picker confirmation interface
+interface ConfirmStockAllocationData {
+  experimentId: string;
+  cohortId: string;
+  stageId: string;
+  participantId: string;
+}
+
+/** Generic endpoint for setting stock allocation. */
+export const setStockAllocationCallable = async (
+  functions: Functions,
+  config: SetStockAllocationData,
+) => {
+  const {data} = await httpsCallable<SetStockAllocationData, SuccessResponse>(
+    functions,
+    'setStockAllocation',
+  )(config);
+  return data;
+};
+
+/** Generic endpoint for confirming stock allocation. */
+export const confirmStockAllocationCallable = async (
+  functions: Functions,
+  config: ConfirmStockAllocationData,
+) => {
+  const {data} = await httpsCallable<ConfirmStockAllocationData, SuccessResponse>(
+    functions,
+    'confirmStockAllocation',
+  )(config);
+  return data;
+};

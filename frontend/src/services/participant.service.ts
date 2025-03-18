@@ -47,6 +47,8 @@ import {
   setSalespersonControllerCallable,
   setSalespersonMoveCallable,
   setSalespersonResponseCallable,
+  setStockAllocationCallable,
+  confirmStockAllocationCallable,
   updateParticipantAcceptedTOSCallable,
   updateParticipantFailureCallable,
   updateParticipantProfileCallable,
@@ -754,6 +756,61 @@ export class ParticipantService extends Service {
       );
     }
     return output.success;
+  }
+
+  async setStockAllocation(
+    stageId: string,
+    allocations: Record<string, number>,
+  ) {
+    let response = {success: false};
+    if (this.experimentId && this.profile) {
+      response = await setStockAllocationCallable(
+        this.sp.firebaseService.functions,
+        {
+          experimentId: this.experimentId,
+          cohortId: this.profile.currentCohortId,
+          stageId,
+          participantId: this.profile.privateId,
+          allocations,
+        },
+      );
+    }
+    return response.success;
+  }
+
+  async confirmStockAllocation(stageId: string) {
+    let response = {success: false};
+    if (this.experimentId && this.profile) {
+      response = await confirmStockAllocationCallable(
+        this.sp.firebaseService.functions,
+        {
+          experimentId: this.experimentId,
+          cohortId: this.profile.currentCohortId,
+          stageId,
+          participantId: this.profile.privateId,
+        },
+      );
+    }
+    return response.success;
+  }
+
+  async markStageAsCompleted(stageId: string) {
+    if (!this.experimentId || !this.profile) return;
+    
+    // Create a document in this participant's stageData collection
+    const stageDocRef = doc(
+      this.sp.firebaseService.firestore,
+      'experiments',
+      this.experimentId,
+      'participants',
+      this.profile.privateId,
+      'stageData',
+      stageId
+    );
+    
+    await updateDoc(stageDocRef, {
+      completed: true,
+    });
   }
 
   async sendAlertMessage(message: string) {

@@ -212,12 +212,15 @@ export class ExperimentEditor extends Service {
     // Update date modified
     this.experiment.metadata.dateModified = Timestamp.now();
 
+    // Use a type assertion to handle the StockpickerStageConfig case
+    const stageConfigs = this.stages as any;
+
     const response = await writeExperimentCallable(
       this.sp.firebaseService.functions,
       {
         collectionName: 'experiments',
         experimentConfig: this.experiment,
-        stageConfigs: this.stages,
+        stageConfigs,
       },
     );
 

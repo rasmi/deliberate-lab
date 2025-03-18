@@ -29,6 +29,8 @@ export * from './stages/ranking.utils';
 
 export * from './stages/salesperson.endpoints';
 
+export * from './stages/stockpicker.endpoints';
+
 export * from './stages/survey.endpoints';
 
 // API functions

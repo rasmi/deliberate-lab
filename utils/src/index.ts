@@ -53,6 +53,16 @@ export * from './stages/reveal_stage';
 export * from './stages/reveal_stage.validation';
 export * from './stages/salesperson_stage';
 export * from './stages/salesperson_stage.validation';
+export * from './stages/stockpicker_stage';
+// Selectively export from validation to avoid conflicts
+export { 
+  StockMetricsSchema, 
+  MonthlyPerformanceSchema,
+  StockConfigSchema,
+  StockpickerStageConfigSchema,
+  SetStockAllocationData,
+  ConfirmStockAllocationData
+} from './stages/stockpicker_stage.validation';
 export * from './stages/survey_stage';
 export * from './stages/survey_stage.validation';
 export * from './stages/tos_stage';

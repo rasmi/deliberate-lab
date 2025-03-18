@@ -460,13 +460,16 @@ export class ExperimentManager extends Service {
       if (stage) stages.push(stage);
     });
 
+    // Use type assertion to handle StockpickerStageConfig
+    const stageConfigs = stages as any;
+
     let response = {};
     response = await writeExperimentCallable(
       this.sp.firebaseService.functions,
       {
         collectionName: 'experiments',
         experimentConfig: experiment,
-        stageConfigs: stages,
+        stageConfigs,
       },
     );
 

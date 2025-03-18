@@ -15,8 +15,9 @@ import {ExperimentEditor} from '../../services/experiment.editor';
 
 import {
   MetadataConfig,
-  StageConfig,
+  StageConfig, 
   StageKind,
+  StageGame,
   createChatStage,
   createRankingStage,
   createInfoStage,
@@ -27,7 +28,9 @@ import {
   createSurveyStage,
   createTOSStage,
   createTransferStage,
+  createStockpickerStage,
 } from '@deliberation-lab/utils';
+
 import {
   LAS_METADATA,
   ANON_LAS_METADATA,
@@ -46,6 +49,11 @@ import {
   SALESPERSON_GAME_METADATA,
   getSalespersonStageConfigs,
 } from '../../shared/games/salesperson';
+import {
+  DEFAULT_STOCKS,
+  STOCKPICKER_GAME_METADATA,
+  getStockpickerStageConfigs
+} from '../../shared/games/stockpicker';
 
 import {styles} from './stage_builder_dialog.scss';
 
@@ -124,7 +132,7 @@ export class StageBuilderDialog extends MobxLitElement {
       <div class="card-gallery-wrapper">
         ${this.renderLASCard()} ${this.renderLASCard(true)}
         ${this.renderRealityTVCard()} ${this.renderChipNegotiationCard()}
-        ${this.renderSalespersonGameCard()}
+        ${this.renderSalespersonGameCard()} ${this.renderStockPickerGameCard()}
       </div>
     `;
   }
@@ -137,6 +145,7 @@ export class StageBuilderDialog extends MobxLitElement {
         ${this.renderSurveyCard()} ${this.renderSurveyPerParticipantCard()}
         ${this.renderChatCard()} ${this.renderRankingCard()}
         ${this.renderRevealCard()} ${this.renderPayoutCard()}
+        ${this.renderStockPickerCard()}
       </div>
     `;
   }
@@ -219,6 +228,19 @@ export class StageBuilderDialog extends MobxLitElement {
       <div class="card" @click=${addGame}>
         <div class="title">${SALESPERSON_GAME_METADATA.name}</div>
         <div>${SALESPERSON_GAME_METADATA.description}</div>
+      </div>
+    `;
+  }
+  
+  private renderStockPickerGameCard() {
+    const addGame = () => {
+      this.addGame(STOCKPICKER_GAME_METADATA, getStockpickerStageConfigs());
+    };
+
+    return html`
+      <div class="card" @click=${addGame}>
+        <div class="title">📈 ${STOCKPICKER_GAME_METADATA.name}</div>
+        <div>${STOCKPICKER_GAME_METADATA.description}</div>
       </div>
     `;
   }
@@ -369,6 +391,39 @@ export class StageBuilderDialog extends MobxLitElement {
         <div>
           Assign participants to different cohorts while they wait in this
           stage.
+        </div>
+      </div>
+    `;
+  }
+
+  private renderStockPickerCard() {
+    const addStage = () => {
+      // Create a stock picker stage using createStockpickerStage from utils
+      const stage = createStockpickerStage(DEFAULT_STOCKS, {
+        id: `stockpicker-${Date.now()}`,
+        game: StageGame.NONE,
+        name: 'Stock Picker',
+        descriptions: {
+          primaryText: 'Explore stock information and make investment decisions.',
+          infoText: 'Review the performance metrics and analysis for each stock, then decide how to allocate your portfolio between them.',
+          helpText: 'Use the sliders to adjust your allocation percentages. The total must add up to 100%.',
+        },
+        progress: {
+          minParticipants: 1, 
+          waitForAllParticipants: true,
+          showParticipantProgress: true,
+        },
+        enableTimeout: false,
+        timeoutSeconds: 0
+      });
+      this.addStage(stage);
+    };
+
+    return html`
+      <div class="card" @click=${addStage}>
+        <div class="title">📈 Stock Picker</div>
+        <div>
+          Allow participants to explore stocks and allocate their portfolio.
         </div>
       </div>
     `;
