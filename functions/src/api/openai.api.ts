@@ -115,6 +115,8 @@ export async function callOpenAIChatCompletion(
   generationConfig: ModelGenerationConfig,
   structuredOutputConfig?: StructuredOutputConfig,
 ) {
+  const startTime = Date.now();
+  console.log(`[PERF] callOpenAIChatCompletion START`);
   const client = new OpenAI({
     apiKey: apiKey,
     baseURL: baseUrl,
@@ -142,6 +144,8 @@ export async function callOpenAIChatCompletion(
 
   let response;
   try {
+    const openAICallStart = Date.now();
+    console.log(`[PERF] Making OpenAI client.chat.completions.create call...`);
     response = await client.chat.completions.create({
       model: modelName,
       messages: messages,
@@ -152,6 +156,9 @@ export async function callOpenAIChatCompletion(
       response_format: responseFormat,
       ...customFields,
     });
+    console.log(
+      `[PERF] OpenAI client call returned - Elapsed: ${Date.now() - openAICallStart}ms`,
+    );
   } catch (error) {
     if (error instanceof OpenAI.APIError) {
       let status;
@@ -232,8 +239,15 @@ export async function callOpenAIChatCompletion(
     text: response.choices[0].message.content,
   };
   if (structuredOutputConfig?.enabled) {
-    return addParsedModelResponse(modelResponse);
+    const parseResult = addParsedModelResponse(modelResponse);
+    console.log(
+      `[PERF] callOpenAIChatCompletion END (with structured output) - Total elapsed: ${Date.now() - startTime}ms`,
+    );
+    return parseResult;
   }
+  console.log(
+    `[PERF] callOpenAIChatCompletion END - Total elapsed: ${Date.now() - startTime}ms`,
+  );
   return modelResponse;
 }
 
@@ -245,6 +259,10 @@ export async function getOpenAIAPIChatCompletionResponse(
   generationConfig: ModelGenerationConfig,
   structuredOutputConfig?: StructuredOutputConfig,
 ): Promise<ModelResponse> {
+  const startTime = Date.now();
+  console.log(
+    `[PERF] getOpenAIAPIChatCompletionResponse START - Model: ${modelName}`,
+  );
   if (!modelName) {
     console.warn('OpenAI API model name not set.');
   }
@@ -266,6 +284,8 @@ export async function getOpenAIAPIChatCompletionResponse(
 
   let response;
   try {
+    const apiCallStart = Date.now();
+    console.log(`[PERF] Calling OpenAI API (callOpenAIChatCompletion)...`);
     response = await callOpenAIChatCompletion(
       apiKey,
       baseUrl,
@@ -273,6 +293,9 @@ export async function getOpenAIAPIChatCompletionResponse(
       promptText,
       generationConfig,
       structuredOutputConfig,
+    );
+    console.log(
+      `[PERF] OpenAI API call completed - Elapsed: ${Date.now() - apiCallStart}ms`,
     );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
@@ -283,5 +306,8 @@ export async function getOpenAIAPIChatCompletionResponse(
     };
   }
 
+  console.log(
+    `[PERF] getOpenAIAPIChatCompletionResponse END - Total elapsed: ${Date.now() - startTime}ms`,
+  );
   return response;
 }

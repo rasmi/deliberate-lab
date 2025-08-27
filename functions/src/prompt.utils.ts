@@ -116,6 +116,10 @@ export async function getStructuredPrompt(
   agentConfig: ProfileAgentConfig,
   promptConfig: BasePromptConfig,
 ) {
+  const startTime = Date.now();
+  console.log(`[PERF] getStructuredPrompt START - Stage: ${stageId}`);
+  const processStart = Date.now();
+  console.log(`[PERF] Processing prompt items...`);
   const promptText = await processPromptItems(
     promptConfig.prompt,
     experimentId,
@@ -125,13 +129,22 @@ export async function getStructuredPrompt(
     userProfile,
     agentConfig,
   );
+  console.log(
+    `[PERF] Prompt items processed - Elapsed: ${Date.now() - processStart}ms`,
+  );
 
   // Add structured output if relevant
   const structuredOutput = makeStructuredOutputPrompt(
     promptConfig.structuredOutputConfig,
   );
 
-  return structuredOutput ? `${promptText}\n${structuredOutput}` : promptText;
+  const result = structuredOutput
+    ? `${promptText}\n${structuredOutput}`
+    : promptText;
+  console.log(
+    `[PERF] getStructuredPrompt END - Total elapsed: ${Date.now() - startTime}ms`,
+  );
+  return result;
 }
 
 /** Process prompt items recursively. */
@@ -238,9 +251,19 @@ export async function getStageContextForPrompt(
   currentStageId: string,
   item: StageContextPromptItem,
 ) {
+  const startTime = Date.now();
+  console.log(`[PERF] getStageContextForPrompt START - Stage: ${item.stageId}`);
   // Get the specific stage
+  const stageFetchStart = Date.now();
+  console.log(`[PERF] Fetching stage data...`);
   const stage = await getFirestoreStage(experimentId, item.stageId);
+  console.log(
+    `[PERF] Stage data fetched - Elapsed: ${Date.now() - stageFetchStart}ms`,
+  );
   if (!stage) {
+    console.log(
+      `[PERF] No stage found - Total elapsed: ${Date.now() - startTime}ms`,
+    );
     return '';
   }
 
@@ -258,6 +281,8 @@ export async function getStageContextForPrompt(
 
   // Include stage display with answers embedded, or just answers
   if (item.includeStageDisplay) {
+    const displayStart = Date.now();
+    console.log(`[PERF] Getting stage display...`);
     textItems.push(
       await getStageDisplayForPrompt(
         experimentId,
@@ -267,7 +292,12 @@ export async function getStageContextForPrompt(
         item.includeParticipantAnswers,
       ),
     );
+    console.log(
+      `[PERF] Stage display fetched - Elapsed: ${Date.now() - displayStart}ms`,
+    );
   } else if (item.includeParticipantAnswers) {
+    const answersStart = Date.now();
+    console.log(`[PERF] Getting participant answers...`);
     textItems.push(
       await getStageAnswersForPrompt(
         experimentId,
@@ -276,9 +306,16 @@ export async function getStageContextForPrompt(
         stage,
       ),
     );
+    console.log(
+      `[PERF] Participant answers fetched - Elapsed: ${Date.now() - answersStart}ms`,
+    );
   }
 
-  return textItems.join('\n');
+  const result = textItems.join('\n');
+  console.log(
+    `[PERF] getStageContextForPrompt END - Total elapsed: ${Date.now() - startTime}ms`,
+  );
+  return result;
 }
 
 export async function getStageDisplayForPrompt(

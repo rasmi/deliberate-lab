@@ -255,6 +255,8 @@ export async function getGeminiAPIResponse(
   generationConfig: ModelGenerationConfig,
   structuredOutputConfig?: StructuredOutputConfig,
 ): Promise<ModelResponse> {
+  const startTime = Date.now();
+  console.log(`[PERF] getGeminiAPIResponse START - Model: ${modelName}`);
   // Extract disableSafetyFilters setting from generationConfig
   const disableSafetyFilters = generationConfig.disableSafetyFilters ?? false;
 
@@ -297,7 +299,9 @@ export async function getGeminiAPIResponse(
   const safetySettings = getSafetySettings(disableSafetyFilters);
 
   try {
-    return await callGemini(
+    const geminiCallStart = Date.now();
+    console.log(`[PERF] Calling Gemini API (callGemini)...`);
+    const result = await callGemini(
       apiKey,
       promptText,
       geminiConfig,
@@ -305,6 +309,13 @@ export async function getGeminiAPIResponse(
       structuredOutputConfig?.enabled,
       safetySettings,
     );
+    console.log(
+      `[PERF] Gemini API call completed - Elapsed: ${Date.now() - geminiCallStart}ms`,
+    );
+    console.log(
+      `[PERF] getGeminiAPIResponse END - Total elapsed: ${Date.now() - startTime}ms`,
+    );
+    return result;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (!(error instanceof ApiError)) {
@@ -322,6 +333,9 @@ export async function getGeminiAPIResponse(
     } else if (error.status >= 500 && error.status < 600) {
       returnStatus = ModelResponseStatus.PROVIDER_UNAVAILABLE_ERROR;
     }
+    console.log(
+      `[PERF] getGeminiAPIResponse END (with error) - Status: ${returnStatus}, Total elapsed: ${Date.now() - startTime}ms`,
+    );
     return {
       status: returnStatus,
       generationConfig: geminiConfig,

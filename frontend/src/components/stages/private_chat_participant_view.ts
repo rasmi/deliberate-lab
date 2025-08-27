@@ -19,14 +19,28 @@ export class PrivateChatView extends MobxLitElement {
   static override styles: CSSResultGroup = [styles];
 
   private readonly participantService = core.getService(ParticipantService);
+  private renderCount = 0;
+  private lastRenderTime = 0;
 
   @property() stage: PrivateChatStageConfig | undefined = undefined;
 
   override render() {
-    if (!this.stage) return nothing;
+    const renderStartTime = performance.now();
+    this.renderCount++;
+
+    if (!this.stage) {
+      console.log(
+        `[PERF-UI] PrivateChatView render #${this.renderCount} - No stage`,
+      );
+      return nothing;
+    }
 
     const chatMessages =
       this.participantService.privateChatMap[this.stage.id] ?? [];
+
+    console.log(
+      `[PERF-UI] PrivateChatView render #${this.renderCount} - Stage: ${this.stage.id}, Messages: ${chatMessages.length}, Time since last: ${this.lastRenderTime ? (renderStartTime - this.lastRenderTime).toFixed(2) : 'first'}ms`,
+    );
 
     // Count participant messages
     const publicId = this.participantService.profile?.publicId ?? '';
@@ -70,9 +84,14 @@ export class PrivateChatView extends MobxLitElement {
         !isWaitingForResponse
       : participantMessageCount >= this.stage.minNumberOfTurns;
 
-    return html`
+    const result = html`
       <chat-interface .stage=${this.stage} .disableInput=${isDisabledInput()}>
-        ${chatMessages.map((message) => this.renderChatMessage(message))}
+        ${chatMessages.map((message, index) => {
+          console.log(
+            `[PERF-UI] Rendering message ${index + 1}/${chatMessages.length} - ID: ${message.id}`,
+          );
+          return this.renderChatMessage(message);
+        })}
         ${isDisabledInput() && !isConversationOver
           ? this.renderWaitingMessage()
           : nothing}
@@ -87,6 +106,14 @@ export class PrivateChatView extends MobxLitElement {
           : nothing}
       </stage-footer>
     `;
+
+    const renderEndTime = performance.now();
+    console.log(
+      `[PERF-UI] PrivateChatView render #${this.renderCount} END - Elapsed: ${(renderEndTime - renderStartTime).toFixed(2)}ms`,
+    );
+    this.lastRenderTime = renderEndTime;
+
+    return result;
   }
 
   private renderWaitingMessage() {
@@ -113,10 +140,19 @@ export class PrivateChatView extends MobxLitElement {
   }
 
   private renderChatMessage(chatMessage: ChatMessage) {
+    const renderMsgStart = performance.now();
+    let result;
     if (chatMessage.isError) {
-      return html`<div class="description error">${chatMessage.message}</div>`;
+      result = html`<div class="description error">
+        ${chatMessage.message}
+      </div>`;
+    } else {
+      result = html`<chat-message .chat=${chatMessage}></chat-message>`;
     }
-    return html`<chat-message .chat=${chatMessage}></chat-message>`;
+    console.log(
+      `[PERF-UI] renderChatMessage - ID: ${chatMessage.id}, Error: ${chatMessage.isError}, Elapsed: ${(performance.now() - renderMsgStart).toFixed(2)}ms`,
+    );
+    return result;
   }
 
   private renderConversationEndedMessage() {

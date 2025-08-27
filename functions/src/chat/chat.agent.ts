@@ -50,8 +50,20 @@ export async function createAgentChatMessageFromPrompt(
   // Profile of agent who will be sending the chat message
   user: ParticipantProfileExtended | MediatorProfileExtended,
 ) {
-  if (!user.agentConfig) return false;
+  const startTime = Date.now();
+  console.log(
+    `[PERF] createAgentChatMessageFromPrompt START - User: ${user.publicId}, Stage: ${stageId}, TriggerChat: ${triggerChatId || 'initial'}`,
+  );
 
+  if (!user.agentConfig) {
+    console.log(
+      `[PERF] No agent config for ${user.publicId} - Elapsed: ${Date.now() - startTime}ms`,
+    );
+    return false;
+  }
+
+  const promptFetchStart = Date.now();
+  console.log(`[PERF] Fetching prompt config...`);
   const promptConfig = (
     await app
       .firestore()
@@ -67,8 +79,14 @@ export async function createAgentChatMessageFromPrompt(
       .doc(stageId)
       .get()
   ).data() as ChatPromptConfig | undefined;
+  console.log(
+    `[PERF] Prompt config fetched - Elapsed: ${Date.now() - promptFetchStart}ms`,
+  );
 
   if (!promptConfig) {
+    console.log(
+      `[PERF] No prompt config for stage ${stageId} - Total elapsed: ${Date.now() - startTime}ms`,
+    );
     return false; // No prompt configured for this stage
   }
 
@@ -126,6 +144,8 @@ export async function createAgentChatMessageFromPrompt(
 
   // If no configured initial message or this is a regular response, query the API
   if (!message) {
+    const apiCallStart = Date.now();
+    console.log(`[PERF] Starting API call for message generation...`);
     const response = await getAgentChatMessage(
       experimentId,
       cohortId,
@@ -134,12 +154,19 @@ export async function createAgentChatMessageFromPrompt(
       user,
       promptConfig,
     );
+    console.log(
+      `[PERF] API call completed - Elapsed: ${Date.now() - apiCallStart}ms`,
+    );
     message = response.message;
     if (!message) {
+      console.log(
+        `[PERF] No message generated - Total elapsed: ${Date.now() - startTime}ms`,
+      );
       return response.success;
     }
   }
 
+  const sendStart = Date.now();
   if (stage.kind === StageKind.PRIVATE_CHAT) {
     // For private chat, use the first participant's ID for storage location
     const privateChatParticipantId = participantIds[0];
@@ -147,8 +174,12 @@ export async function createAgentChatMessageFromPrompt(
       console.error(
         'No participant ID provided for private chat message storage',
       );
+      console.log(
+        `[PERF] Error: no participant ID - Total elapsed: ${Date.now() - startTime}ms`,
+      );
       return false;
     }
+    console.log(`[PERF] Sending private chat message...`);
     sendAgentPrivateChatMessage(
       experimentId,
       privateChatParticipantId,
@@ -158,6 +189,7 @@ export async function createAgentChatMessageFromPrompt(
       promptConfig.chatSettings,
     );
   } else {
+    console.log(`[PERF] Sending group chat message...`);
     sendAgentGroupChatMessage(
       experimentId,
       cohortId,
@@ -167,6 +199,12 @@ export async function createAgentChatMessageFromPrompt(
       promptConfig.chatSettings,
     );
   }
+  console.log(
+    `[PERF] Message send initiated - Elapsed: ${Date.now() - sendStart}ms`,
+  );
+  console.log(
+    `[PERF] createAgentChatMessageFromPrompt END - Total elapsed: ${Date.now() - startTime}ms`,
+  );
 
   return true;
 }
@@ -181,14 +219,28 @@ export async function getAgentChatMessage(
   user: ParticipantProfileExtended | MediatorProfileExtended,
   promptConfig: ChatPromptConfig,
 ): Promise<{message: ChatMessage | null; success: boolean}> {
+  const startTime = Date.now();
+  console.log(`[PERF] getAgentChatMessage START - User: ${user.publicId}`);
   const stageId = stage.id;
 
   // Fetch experiment creator's API key.
+  const apiKeyFetchStart = Date.now();
+  console.log(`[PERF] Fetching experimenter API keys...`);
   const experimenterData =
     await getExperimenterDataFromExperiment(experimentId);
-  if (!experimenterData) return {message: null, success: false};
+  console.log(
+    `[PERF] API keys fetched - Elapsed: ${Date.now() - apiKeyFetchStart}ms`,
+  );
+  if (!experimenterData) {
+    console.log(
+      `[PERF] No experimenter data - Total elapsed: ${Date.now() - startTime}ms`,
+    );
+    return {message: null, success: false};
+  }
 
   // Get chat messages from private/public data based on stage kind
+  const chatHistoryStart = Date.now();
+  console.log(`[PERF] Fetching chat history...`);
   const chatMessages =
     stage.kind === StageKind.PRIVATE_CHAT
       ? await getFirestorePrivateChatMessages(
@@ -201,6 +253,9 @@ export async function getAgentChatMessage(
           cohortId,
           stageId,
         );
+  console.log(
+    `[PERF] Chat history fetched (${chatMessages.length} messages) - Elapsed: ${Date.now() - chatHistoryStart}ms`,
+  );
 
   // Confirm that agent can send chat messages based on prompt config
   const chatSettings = promptConfig.chatSettings;
@@ -215,6 +270,8 @@ export async function getAgentChatMessage(
 
   // Use provided participant IDs for prompt context
   // Get structured prompt
+  const promptGenerationStart = Date.now();
+  console.log(`[PERF] Generating structured prompt...`);
   const structuredPrompt = await getStructuredPrompt(
     experimentId,
     cohortId,
@@ -223,6 +280,9 @@ export async function getAgentChatMessage(
     user,
     user.agentConfig,
     promptConfig,
+  );
+  console.log(
+    `[PERF] Structured prompt generated - Elapsed: ${Date.now() - promptGenerationStart}ms`,
   );
 
   // Check if we should use message-based format
@@ -250,6 +310,8 @@ export async function getAgentChatMessage(
   // Prepare prompt - either message-based or traditional string
   let prompt: string | ConversationMessage[];
   if (useMessageFormat && isPrivateChat) {
+    const messageFormatStart = Date.now();
+    console.log(`[PERF] Converting to message format...`);
     prompt = await convertToMessageFormat(
       experimentId,
       participantIds,
@@ -257,10 +319,15 @@ export async function getAgentChatMessage(
       user,
       structuredPrompt,
     );
+    console.log(
+      `[PERF] Message format conversion done - Elapsed: ${Date.now() - messageFormatStart}ms`,
+    );
   } else {
     prompt = structuredPrompt;
   }
 
+  const modelResponseStart = Date.now();
+  console.log(`[PERF] Calling model API...`);
   const response = await processModelResponse(
     experimentId,
     cohortId,
@@ -276,6 +343,9 @@ export async function getAgentChatMessage(
     promptConfig.generationConfig,
     promptConfig.structuredOutputConfig,
     promptConfig.numRetries ?? 0, // Pass numRetries from config
+  );
+  console.log(
+    `[PERF] Model API response received - Elapsed: ${Date.now() - modelResponseStart}ms`,
   );
 
   // Process response
@@ -358,6 +428,9 @@ export async function getAgentChatMessage(
     agentId: user.agentConfig.agentId,
     timestamp: Timestamp.now(),
   });
+  console.log(
+    `[PERF] getAgentChatMessage END - Total elapsed: ${Date.now() - startTime}ms`,
+  );
   return {message: chatMessage, success: true};
 }
 
@@ -442,10 +515,19 @@ export async function sendAgentPrivateChatMessage(
   chatMessage: ChatMessage,
   chatSettings: AgentChatSettings,
 ) {
+  const startTime = Date.now();
+  console.log(`[PERF] sendAgentPrivateChatMessage START`);
   // TODO: Decrease typing delay to account for LLM API call latencies?
   // TODO: Don't send message if conversation continues while agent is typing?
   if (chatSettings.wordsPerMinute) {
+    const typingStart = Date.now();
+    console.log(
+      `[PERF] Starting typing delay (${chatSettings.wordsPerMinute} WPM)...`,
+    );
     await awaitTypingDelay(chatMessage.message, chatSettings.wordsPerMinute);
+    console.log(
+      `[PERF] Typing delay completed - Elapsed: ${Date.now() - typingStart}ms`,
+    );
   }
 
   // Check if the conversation has moved on,
@@ -488,6 +570,8 @@ export async function sendAgentPrivateChatMessage(
   }
 
   // Send chat message
+  const firestoreWriteStart = Date.now();
+  console.log(`[PERF] Writing message to Firestore...`);
   const agentDocument = app
     .firestore()
     .collection('experiments')
@@ -500,7 +584,13 @@ export async function sendAgentPrivateChatMessage(
     .doc(chatMessage.id);
 
   chatMessage.timestamp = Timestamp.now();
-  agentDocument.set(chatMessage);
+  await agentDocument.set(chatMessage);
+  console.log(
+    `[PERF] Message written to Firestore - Elapsed: ${Date.now() - firestoreWriteStart}ms`,
+  );
+  console.log(
+    `[PERF] sendAgentPrivateChatMessage END - Total elapsed: ${Date.now() - startTime}ms`,
+  );
 
   return true;
 }

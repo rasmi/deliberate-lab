@@ -35,6 +35,10 @@ export async function processModelResponse(
   structuredOutputConfig?: StructuredOutputConfig,
   numRetries: number = 0,
 ): Promise<ModelResponse> {
+  const startTime = Date.now();
+  console.log(
+    `[PERF] processModelResponse START - Model: ${modelSettings.modelName}, API: ${modelSettings.apiType}`,
+  );
   // Convert prompt to string for logging
   const promptText =
     typeof prompt === 'string'
@@ -68,6 +72,10 @@ export async function processModelResponse(
     });
     try {
       const queryTimestamp = Timestamp.now();
+      const apiCallStart = Date.now();
+      console.log(
+        `[PERF] Calling getAgentResponse (attempt ${attempt + 1}/${maxRetries + 1})...`,
+      );
       response = (await getAgentResponse(
         apiKeyConfig,
         prompt,
@@ -76,6 +84,9 @@ export async function processModelResponse(
         structuredOutputConfig,
       )) as ModelResponse;
       const responseTimestamp = Timestamp.now();
+      console.log(
+        `[PERF] getAgentResponse completed - Elapsed: ${Date.now() - apiCallStart}ms`,
+      );
 
       log.response = response;
       log.queryTimestamp = queryTimestamp;
@@ -120,6 +131,9 @@ export async function processModelResponse(
     console.error(`Failed after ${numRetries} retries:`, lastError);
   }
 
+  console.log(
+    `[PERF] processModelResponse END - Status: ${response.status}, Total elapsed: ${Date.now() - startTime}ms`,
+  );
   return response;
 }
 
@@ -131,9 +145,15 @@ export async function getAgentResponse(
   generationConfig: ModelGenerationConfig,
   structuredOutputConfig?: StructuredOutputConfig,
 ): Promise<ModelResponse> {
+  const startTime = Date.now();
+  console.log(
+    `[PERF] getAgentResponse START - API Type: ${modelSettings.apiType}`,
+  );
   let response;
 
   if (modelSettings.apiType === ApiKeyType.GEMINI_API_KEY) {
+    const geminiStart = Date.now();
+    console.log(`[PERF] Calling Gemini API...`);
     response = await getGeminiResponse(
       apiKeyConfig,
       modelSettings.modelName,
@@ -141,7 +161,12 @@ export async function getAgentResponse(
       generationConfig,
       structuredOutputConfig,
     );
+    console.log(
+      `[PERF] Gemini API response - Elapsed: ${Date.now() - geminiStart}ms`,
+    );
   } else if (modelSettings.apiType === ApiKeyType.OPENAI_API_KEY) {
+    const openaiStart = Date.now();
+    console.log(`[PERF] Calling OpenAI API...`);
     response = await getOpenAIAPIResponse(
       apiKeyConfig,
       modelSettings.modelName,
@@ -149,12 +174,20 @@ export async function getAgentResponse(
       generationConfig,
       structuredOutputConfig,
     );
+    console.log(
+      `[PERF] OpenAI API response - Elapsed: ${Date.now() - openaiStart}ms`,
+    );
   } else if (modelSettings.apiType === ApiKeyType.OLLAMA_CUSTOM_URL) {
+    const ollamaStart = Date.now();
+    console.log(`[PERF] Calling Ollama API...`);
     response = await getOllamaResponse(
       apiKeyConfig,
       modelSettings.modelName,
       prompt,
       generationConfig,
+    );
+    console.log(
+      `[PERF] Ollama API response - Elapsed: ${Date.now() - ollamaStart}ms`,
     );
   } else {
     response = {
@@ -170,6 +203,9 @@ export async function getAgentResponse(
     );
   }
 
+  console.log(
+    `[PERF] getAgentResponse END - Status: ${response.status}, Total elapsed: ${Date.now() - startTime}ms`,
+  );
   return response;
 }
 

@@ -571,6 +571,11 @@ export class ParticipantService extends Service {
   // createChatMessageCallable will route the chat message to the correct
   // spot based on the stage kind
   async createChatMessage(config: Partial<ChatMessage> = {}) {
+    const sendStartTime = performance.now();
+    console.log(
+      `[PERF-UI] createChatMessage START - Stage: ${this.profile?.currentStageId}, Message: ${config.message?.substring(0, 50)}...`,
+    );
+
     let response = {};
     this.isSendingChat = true;
     if (this.experimentId && this.profile) {
@@ -595,12 +600,22 @@ export class ParticipantService extends Service {
         chatMessage,
       };
 
+      console.log(
+        `[PERF-UI] Calling createChatMessageCallable - Stage: ${this.profile.currentStageId}, Chat ID: ${chatMessage.id}`,
+      );
+      const callStartTime = performance.now();
       response = await createChatMessageCallable(
         this.sp.firebaseService.functions,
         createData,
       );
+      console.log(
+        `[PERF-UI] createChatMessageCallable completed - Elapsed: ${(performance.now() - callStartTime).toFixed(2)}ms`,
+      );
     }
     this.isSendingChat = false;
+    console.log(
+      `[PERF-UI] createChatMessage END - Total elapsed: ${(performance.now() - sendStartTime).toFixed(2)}ms`,
+    );
     return response;
   }
 
