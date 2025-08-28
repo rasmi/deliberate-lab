@@ -429,7 +429,7 @@ export async function getAgentChatMessage(
     timestamp: Timestamp.now(),
   });
   console.log(
-    `[PERF] getAgentChatMessage END - Total elapsed: ${Date.now() - startTime}ms`,
+    `[PERF] getAgentChatMessage END - Chat ID: ${chatMessage.id}, Total elapsed: ${Date.now() - startTime}ms`,
   );
   return {message: chatMessage, success: true};
 }
@@ -571,7 +571,9 @@ export async function sendAgentPrivateChatMessage(
 
   // Send chat message
   const firestoreWriteStart = Date.now();
-  console.log(`[PERF] Writing message to Firestore...`);
+  console.log(
+    `[PERF] Writing agent message to Firestore - Message ID: ${chatMessage.id}, Participant: ${participantId}`,
+  );
   const agentDocument = app
     .firestore()
     .collection('experiments')
@@ -586,11 +588,19 @@ export async function sendAgentPrivateChatMessage(
   chatMessage.timestamp = Timestamp.now();
   await agentDocument.set(chatMessage);
   console.log(
-    `[PERF] Message written to Firestore - Elapsed: ${Date.now() - firestoreWriteStart}ms`,
+    `[PERF] Agent message written to Firestore - Message ID: ${chatMessage.id}, Elapsed: ${Date.now() - firestoreWriteStart}ms`,
   );
   console.log(
-    `[PERF] sendAgentPrivateChatMessage END - Total elapsed: ${Date.now() - startTime}ms`,
+    `[PERF] sendAgentPrivateChatMessage END - Message ID: ${chatMessage.id}, Total elapsed: ${Date.now() - startTime}ms`,
   );
+
+  // Log complete lifecycle summary
+  console.log(`[PERF-SUMMARY] Private chat agent response complete - Message ID: ${chatMessage.id}:
+    - Participant: ${participantId}
+    - Stage: ${stageId}
+    - Typing delay: ${chatSettings.wordsPerMinute ? 'applied' : 'skipped'}
+    - Firestore write completed
+    - Total time: ${Date.now() - startTime}ms`);
 
   return true;
 }

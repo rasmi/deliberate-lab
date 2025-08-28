@@ -33,7 +33,12 @@ import {
 // ************************************************************************* //
 
 export const createChatMessage = onCall(async (request) => {
+  const startTime = Date.now();
   const {data} = request;
+
+  console.log(
+    `[PERF-ENDPOINT] createChatMessage START - Experiment: ${data.experimentId}, Stage: ${data.stageId}, Participant: ${data.participantId}, ChatId: ${data.chatMessage.id}, Timestamp: ${startTime}`,
+  );
 
   // Define document references
   const privateChatDocument = app
@@ -60,22 +65,41 @@ export const createChatMessage = onCall(async (request) => {
 
   const chatMessage = {...data.chatMessage, timestamp: Timestamp.now()};
 
+  const stageStart = Date.now();
   const stage = await getFirestoreStage(data.experimentId, data.stageId);
+  console.log(
+    `[PERF-ENDPOINT] Stage fetched - Kind: ${stage?.kind}, Elapsed: ${Date.now() - stageStart}ms`,
+  );
+
+  if (!stage) {
+    throw new functions.https.HttpsError('not-found', 'Stage not found');
+  }
 
   // Run document write as transaction to ensure consistency
+  const transactionStart = Date.now();
   await app.firestore().runTransaction(async (transaction) => {
     // Add chat message
     // (see chat.triggers for auto-generated agent responses)
     switch (stage.kind) {
       case StageKind.PRIVATE_CHAT:
+        console.log(
+          `[PERF-ENDPOINT] Writing private chat message to Firestore`,
+        );
         transaction.set(privateChatDocument, chatMessage);
         return {id: privateChatDocument.id};
       default:
         // Otherwise, write to public data
+        console.log(`[PERF-ENDPOINT] Writing public chat message to Firestore`);
         transaction.set(groupChatDocument, chatMessage);
         return {id: groupChatDocument.id};
     }
   });
+  console.log(
+    `[PERF-ENDPOINT] Transaction completed - Elapsed: ${Date.now() - transactionStart}ms`,
+  );
+  console.log(
+    `[PERF-ENDPOINT] createChatMessage END - Total elapsed: ${Date.now() - startTime}ms`,
+  );
 
   return {id: ''};
 });

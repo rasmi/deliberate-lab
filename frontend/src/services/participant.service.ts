@@ -347,18 +347,34 @@ export class ParticipantService extends Service {
             orderBy('timestamp', 'asc'),
           ),
           (snapshot) => {
+            const listenerTime = Date.now();
+            console.log(
+              `[PERF-UI-LISTENER] Private chat snapshot received - Stage: ${stageId}, Timestamp: ${listenerTime}`,
+            );
+
             let changedDocs = snapshot.docChanges().map((change) => change.doc);
             if (changedDocs.length === 0) {
               changedDocs = snapshot.docs;
             }
+
+            console.log(
+              `[PERF-UI-LISTENER] Processing ${changedDocs.length} changed docs`,
+            );
 
             changedDocs.forEach((doc) => {
               if (!this.privateChatMap[stageId]) {
                 this.privateChatMap[stageId] = [];
               }
               const message = doc.data() as ChatMessage;
+              console.log(
+                `[PERF-UI-LISTENER] Adding message to privateChatMap - ID: ${message.id}, Sender: ${message.senderId}, IsError: ${message.isError}`,
+              );
               this.privateChatMap[stageId].push(message);
             });
+
+            console.log(
+              `[PERF-UI-LISTENER] Private chat update complete - Stage: ${stageId}, Total messages: ${this.privateChatMap[stageId]?.length || 0}, Elapsed: ${Date.now() - listenerTime}ms`,
+            );
             this.isPrivateChatLoading = false;
           },
         ),

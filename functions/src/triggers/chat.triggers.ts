@@ -102,7 +102,13 @@ export const onPublicChatMessageCreated = onDocumentCreated(
 export const onPrivateChatMessageCreated = onDocumentCreated(
   'experiments/{experimentId}/participants/{participantId}/stageData/{stageId}/privateChats/{chatId}',
   async (event) => {
+    const triggerStart = Date.now();
+    console.log(
+      `[PERF-TRIGGER] onPrivateChatMessageCreated START - Participant: ${event.params.participantId}, Stage: ${event.params.stageId}, Chat: ${event.params.chatId}, Timestamp: ${triggerStart}`,
+    );
+
     // Ignore if error message
+    const fetchMessageStart = Date.now();
     const message = (
       await app
         .firestore()
@@ -116,7 +122,14 @@ export const onPrivateChatMessageCreated = onDocumentCreated(
         .doc(event.params.chatId)
         .get()
     ).data() as ChatMessage;
+    console.log(
+      `[PERF-TRIGGER] Message fetched - IsError: ${message.isError}, SenderId: ${message.senderId}, Elapsed: ${Date.now() - fetchMessageStart}ms`,
+    );
+
     if (message.isError) {
+      console.log(
+        `[PERF-TRIGGER] Skipping error message - Total elapsed: ${Date.now() - triggerStart}ms`,
+      );
       return;
     }
 
@@ -138,7 +151,16 @@ export const onPrivateChatMessageCreated = onDocumentCreated(
       stage.id,
       true,
     );
+    console.log(
+      `[PERF-TRIGGER] Found ${mediators.length} mediators - Starting agent response generation`,
+    );
+
     mediators.forEach(async (mediator) => {
+      const agentStart = Date.now();
+      console.log(
+        `[PERF-TRIGGER] Calling createAgentChatMessageFromPrompt for mediator: ${mediator.publicId}`,
+      );
+
       const result = await createAgentChatMessageFromPrompt(
         event.params.experimentId,
         participant.currentCohortId,
@@ -147,6 +169,11 @@ export const onPrivateChatMessageCreated = onDocumentCreated(
         event.params.chatId,
         mediator,
       );
+
+      console.log(
+        `[PERF-TRIGGER] Agent response generation completed - Success: ${!!result}, Elapsed: ${Date.now() - agentStart}ms`,
+      );
+
       if (!result) {
         sendErrorPrivateChatMessage(
           event.params.experimentId,
@@ -166,6 +193,7 @@ export const onPrivateChatMessageCreated = onDocumentCreated(
     // If no mediator, return error (otherwise participant may wait
     // indefinitely for a response).
     if (mediators.length === 0) {
+      console.log(`[PERF-TRIGGER] No mediators found - Sending error message`);
       sendErrorPrivateChatMessage(
         event.params.experimentId,
         participant.privateId,
@@ -176,5 +204,9 @@ export const onPrivateChatMessageCreated = onDocumentCreated(
         },
       );
     }
+
+    console.log(
+      `[PERF-TRIGGER] onPrivateChatMessageCreated END - Total elapsed: ${Date.now() - triggerStart}ms`,
+    );
   },
 );
