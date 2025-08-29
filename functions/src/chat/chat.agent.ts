@@ -534,17 +534,27 @@ export async function sendAgentPrivateChatMessage(
   // i.e., trigger chat ID is no longer that latest message
   // Skip this check for initial messages (empty triggerChatId)
   if (triggerChatId !== '') {
+    const conversationCheckStart = Date.now();
+    console.log(`[PERF] Checking if conversation has moved on...`);
+
     const chatHistory = await getFirestorePrivateChatMessages(
       experimentId,
       participantId,
       stageId,
     );
+
+    console.log(
+      `[PERF] Chat history fetched for conversation check - ${chatHistory.length} messages, Elapsed: ${Date.now() - conversationCheckStart}ms`,
+    );
+
     if (
       chatHistory.length > 0 &&
       chatHistory[chatHistory.length - 1].id !== triggerChatId
     ) {
       // TODO: Write chat log
-      console.log('Conversation has moved on');
+      console.log(
+        `[PERF] Conversation has moved on - Skipping response, Total elapsed: ${Date.now() - startTime}ms`,
+      );
       return true; // expected outcome (TODO: return status enum)
     }
   }
@@ -553,27 +563,50 @@ export async function sendAgentPrivateChatMessage(
   // to the trigger message by the same type of agent (participant, mediator)
   // For initial messages (empty triggerChatId), skip this check as it's handled earlier
   if (triggerChatId !== '') {
+    const duplicateCheckStart = Date.now();
+    console.log(`[PERF] Checking for duplicate response...`);
+
     const triggerResponseDoc = getPrivateChatTriggerLogRef(
       experimentId,
       participantId,
       stageId,
       `${triggerChatId}-${chatMessage.type}`,
     );
+
+    const getDocStart = Date.now();
+    console.log(`[PERF] Getting trigger response doc...`);
     const hasTriggerResponse = (await triggerResponseDoc.get()).exists;
+    console.log(
+      `[PERF] Trigger response doc checked - Exists: ${hasTriggerResponse}, Elapsed: ${Date.now() - getDocStart}ms`,
+    );
+
     if (hasTriggerResponse) {
-      console.log('Someone already responded');
+      console.log(
+        `[PERF] Someone already responded - Skipping, Total elapsed: ${Date.now() - startTime}ms`,
+      );
       return true; // expected outcome (TODO: return status enum)
     }
 
     // Otherwise, log response ID as trigger message
-    triggerResponseDoc.set({});
+    const setDocStart = Date.now();
+    console.log(`[PERF] Writing trigger response log...`);
+    await triggerResponseDoc.set({});
+    console.log(
+      `[PERF] Trigger response log written - Elapsed: ${Date.now() - setDocStart}ms`,
+    );
+
+    console.log(
+      `[PERF] Duplicate check complete - Total elapsed: ${Date.now() - duplicateCheckStart}ms`,
+    );
   }
 
   // Send chat message
   const firestoreWriteStart = Date.now();
   console.log(
-    `[PERF] Writing agent message to Firestore - Message ID: ${chatMessage.id}, Participant: ${participantId}`,
+    `[PERF] Preparing to write agent message - Message ID: ${chatMessage.id}`,
   );
+
+  const docRefStart = Date.now();
   const agentDocument = app
     .firestore()
     .collection('experiments')
@@ -584,11 +617,25 @@ export async function sendAgentPrivateChatMessage(
     .doc(stageId)
     .collection('privateChats')
     .doc(chatMessage.id);
+  console.log(
+    `[PERF] Document reference created - Elapsed: ${Date.now() - docRefStart}ms`,
+  );
 
+  const timestampStart = Date.now();
   chatMessage.timestamp = Timestamp.now();
+  console.log(
+    `[PERF] Timestamp added to message - Elapsed: ${Date.now() - timestampStart}ms`,
+  );
+
+  const actualWriteStart = Date.now();
+  console.log(`[PERF] Starting Firestore .set() operation...`);
   await agentDocument.set(chatMessage);
   console.log(
-    `[PERF] Agent message written to Firestore - Message ID: ${chatMessage.id}, Elapsed: ${Date.now() - firestoreWriteStart}ms`,
+    `[PERF] Firestore .set() completed - Elapsed: ${Date.now() - actualWriteStart}ms`,
+  );
+
+  console.log(
+    `[PERF] Agent message written to Firestore - Message ID: ${chatMessage.id}, Total write time: ${Date.now() - firestoreWriteStart}ms`,
   );
   console.log(
     `[PERF] sendAgentPrivateChatMessage END - Message ID: ${chatMessage.id}, Total elapsed: ${Date.now() - startTime}ms`,
