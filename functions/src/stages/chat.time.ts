@@ -63,14 +63,6 @@ export async function updateTimeElapsed(
     await handleTimeElapsed(experimentId, cohortId, stageId);
     return;
   }
-  const isUnderMinimum =
-    stage.timeMinimumInMinutes !== null &&
-    elapsedMinutes < stage.timeMinimumInMinutes;
-
-  if (remainingTime <= 0 && !isUnderMinimum) {
-    await handleTimeElapsed(experimentId, cohortId, stageId);
-    return;
-  }
 
   // Otherwise, continue to wait
   const maxWaitTimeInMinutes = 5;
